@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+
+git am --abort || true
+
+git am ../patch/0001-riscv-Fix-build-against-binutils-2.38.patch
+git am ../patch/0001-riscv-add-missing-SBI-extension-definitions.patch
+git am ../patch/0001-sysreset-provide-SBI-based-sysreset-driver.patch

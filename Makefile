@@ -1,0 +1,49 @@
+# Build U-Boot for StarFive VisionFive 2
+.POSIX:
+
+TAG=VF2_v2.6.0
+NPROC=${shell nproc}
+
+MK_ARCH="${shell uname -m}"
+ifeq ("riscv64", $(MK_ARCH))
+	undefine CROSS_COMPILE
+else
+	export CROSS_COMPILE=riscv64-linux-gnu-
+endif
+undefine MK_ARCH
+
+all:
+	make visionfive2_fw_payload.img
+
+prepare:
+	test -d opensbi || git clone -v \
+	https://github.com/starfive-tech/opensbi.git
+	test -d u-boot || git clone -v \
+	https://github.com/starfive-tech/u-boot.git
+
+u-boot.bin:
+	cd u-boot && git checkout JH7110_VisionFive2_devel
+	cd u-boot && git reset --hard $(TAG)
+	cd u-boot && ../patch/series
+	cd u-boot && make mrproper
+	cp config/config_$(TAG) u-boot/.config
+	echo $(CROSS_COMPILE)
+	cd u-boot && make -j $(NPROC)
+	cp u-boot/u-boot.bin .
+
+fw_payload.bin: u-boot.bin
+	cd opensbi && rm -rf build/
+	cd opensbi && make -j $(NPROC) \
+	  PLATFORM=generic \
+	  FW_PAYLOAD_PATH=../u-boot.bin \
+	  FW_FDT_PATH=../u-boot/arch/riscv/dts/starfive_visionfive2.dtb \
+	  FW_TEXT_START=0x40000000
+	cp opensbi/build/platform/generic/firmware/fw_payload.bin .
+
+visionfive2_fw_payload.img: fw_payload.bin
+	mkimage -f visionfive2-uboot-fit-image.its \
+	  -A riscv -O linux -T flat_dt \
+	  visionfive2_fw_payload.img
+
+clean:
+	rm -f visionfive2_fw_payload.img fw_payload.bin u-boot.bin

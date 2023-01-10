@@ -1,0 +1,194 @@
+From 24ed5317d427bfe278a1329abbf4522dba1025a3 Mon Sep 17 00:00:00 2001
+From: Heinrich Schuchardt <heinrich.schuchardt@canonical.com>
+Date: Sun, 12 Sep 2021 21:11:46 +0200
+Subject: [PATCH] sysreset: provide SBI based sysreset driver
+
+Provide sysreset driver using the SBI system reset extension.
+
+Signed-off-by: Heinrich Schuchardt <heinrich.schuchardt@canonical.com>
+Reviewed-by: Sean Anderson <seanga2@gmail.com>
+Reviewed-by: Bin Meng <bmeng.cn@gmail.com>
+Tested-by: Samuel Holland <samuel@sholland.org>
+---
+ MAINTAINERS                     |  1 +
+ arch/riscv/cpu/cpu.c            | 13 ++++++++-
+ arch/riscv/include/asm/sbi.h    |  1 +
+ arch/riscv/lib/sbi.c            | 12 ++++++++
+ drivers/sysreset/Kconfig        | 12 ++++++++
+ drivers/sysreset/Makefile       |  1 +
+ drivers/sysreset/sysreset_sbi.c | 51 +++++++++++++++++++++++++++++++++
+ 7 files changed, 90 insertions(+), 1 deletion(-)
+ create mode 100644 drivers/sysreset/sysreset_sbi.c
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index 31b49c0a95..71f468c00a 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -1026,6 +1026,7 @@ T:	git https://source.denx.de/u-boot/custodians/u-boot-riscv.git
+ F:	arch/riscv/
+ F:	cmd/riscv/
+ F:	doc/usage/sbi.rst
++F:	drivers/sysreset/sysreset_sbi.c
+ F:	drivers/timer/andes_plmt_timer.c
+ F:	drivers/timer/sifive_clint_timer.c
+ F:	tools/prelink-riscv.c
+diff --git a/arch/riscv/cpu/cpu.c b/arch/riscv/cpu/cpu.c
+index c894ac10b5..8e49b6d736 100644
+--- a/arch/riscv/cpu/cpu.c
++++ b/arch/riscv/cpu/cpu.c
+@@ -6,6 +6,7 @@
+ #include <common.h>
+ #include <cpu.h>
+ #include <dm.h>
++#include <dm/lists.h>
+ #include <init.h>
+ #include <log.h>
+ #include <asm/encoding.h>
+@@ -138,7 +139,17 @@ int arch_cpu_init_dm(void)
+ 
+ int arch_early_init_r(void)
+ {
+-	return riscv_cpu_probe();
++	int ret;
++
++	ret = riscv_cpu_probe();
++	if (ret)
++		return ret;
++
++	if (IS_ENABLED(CONFIG_SYSRESET_SBI))
++		device_bind_driver(gd->dm_root, "sbi-sysreset",
++				   "sbi-sysreset", NULL);
++
++	return 0;
+ }
+ 
+ /**
+diff --git a/arch/riscv/include/asm/sbi.h b/arch/riscv/include/asm/sbi.h
+index 34a115afc3..5030892b47 100644
+--- a/arch/riscv/include/asm/sbi.h
++++ b/arch/riscv/include/asm/sbi.h
+@@ -153,5 +153,6 @@ void sbi_set_timer(uint64_t stime_value);
+ long sbi_get_spec_version(void);
+ int sbi_get_impl_id(void);
+ int sbi_probe_extension(int ext);
++void sbi_srst_reset(unsigned long type, unsigned long reason);
+ 
+ #endif
+diff --git a/arch/riscv/lib/sbi.c b/arch/riscv/lib/sbi.c
+index 77845a73ca..2b53896b8a 100644
+--- a/arch/riscv/lib/sbi.c
++++ b/arch/riscv/lib/sbi.c
+@@ -108,6 +108,18 @@ int sbi_probe_extension(int extid)
+ 	return -ENOTSUPP;
+ }
+ 
++/**
++ * sbi_srst_reset() - invoke system reset extension
++ *
++ * @type:	type of reset
++ * @reason:	reason for reset
++ */
++void sbi_srst_reset(unsigned long type, unsigned long reason)
++{
++	sbi_ecall(SBI_EXT_SRST, SBI_EXT_SRST_RESET, type, reason,
++		  0, 0, 0, 0);
++}
++
+ #ifdef CONFIG_SBI_V01
+ 
+ /**
+diff --git a/drivers/sysreset/Kconfig b/drivers/sysreset/Kconfig
+index ac77ffbc8b..43a948cfcd 100644
+--- a/drivers/sysreset/Kconfig
++++ b/drivers/sysreset/Kconfig
+@@ -85,6 +85,18 @@ config SYSRESET_PSCI
+ 	  Enable PSCI SYSTEM_RESET function call.  To use this, PSCI firmware
+ 	  must be running on your system.
+ 
++config SYSRESET_SBI
++	bool "Enable support for SBI System Reset"
++	depends on RISCV_SMODE && SBI_V02
++	select SYSRESET_CMD_POWEROFF if CMD_POWEROFF
++	help
++	  Enable system reset and poweroff via the SBI system reset extension.
++	  The extension was introduced in version 0.3 of the SBI specification.
++
++	  If the SBI implementation provides the extension, is board specific.
++	  The RISC-V platform specification mandates the extension for rich
++	  operating system platforms.
++
+ config SYSRESET_SOCFPGA
+ 	bool "Enable support for Intel SOCFPGA family"
+ 	depends on ARCH_SOCFPGA && (TARGET_SOCFPGA_GEN5 || TARGET_SOCFPGA_ARRIA10)
+diff --git a/drivers/sysreset/Makefile b/drivers/sysreset/Makefile
+index de81c399d7..8e00be0779 100644
+--- a/drivers/sysreset/Makefile
++++ b/drivers/sysreset/Makefile
+@@ -13,6 +13,7 @@ obj-$(CONFIG_SYSRESET_MPC83XX) += sysreset_mpc83xx.o
+ obj-$(CONFIG_SYSRESET_MICROBLAZE) += sysreset_microblaze.o
+ obj-$(CONFIG_SYSRESET_OCTEON) += sysreset_octeon.o
+ obj-$(CONFIG_SYSRESET_PSCI) += sysreset_psci.o
++obj-$(CONFIG_SYSRESET_SBI) += sysreset_sbi.o
+ obj-$(CONFIG_SYSRESET_SOCFPGA) += sysreset_socfpga.o
+ obj-$(CONFIG_SYSRESET_SOCFPGA_SOC64) += sysreset_socfpga_soc64.o
+ obj-$(CONFIG_SYSRESET_TI_SCI) += sysreset-ti-sci.o
+diff --git a/drivers/sysreset/sysreset_sbi.c b/drivers/sysreset/sysreset_sbi.c
+new file mode 100644
+index 0000000000..5e8090d62b
+--- /dev/null
++++ b/drivers/sysreset/sysreset_sbi.c
+@@ -0,0 +1,51 @@
++// SPDX-License-Identifier: GPL-2.0+
++/*
++ * Copyright 2021, Heinrich Schuchardt <heinrich.schuchardt@canonical.com>
++ */
++
++#include <common.h>
++#include <dm.h>
++#include <errno.h>
++#include <log.h>
++#include <sysreset.h>
++#include <asm/sbi.h>
++
++static enum sbi_srst_reset_type reset_type_map[SYSRESET_COUNT] = {
++	[SYSRESET_WARM] = SBI_SRST_RESET_TYPE_WARM_REBOOT,
++	[SYSRESET_COLD] = SBI_SRST_RESET_TYPE_COLD_REBOOT,
++	[SYSRESET_POWER] = SBI_SRST_RESET_TYPE_COLD_REBOOT,
++	[SYSRESET_POWER_OFF] = SBI_SRST_RESET_TYPE_SHUTDOWN,
++};
++
++static int sbi_sysreset_request(struct udevice *dev, enum sysreset_t type)
++{
++	enum sbi_srst_reset_type reset_type;
++
++	reset_type = reset_type_map[type];
++	sbi_srst_reset(reset_type, SBI_SRST_RESET_REASON_NONE);
++
++	return -EINPROGRESS;
++}
++
++static int sbi_sysreset_probe(struct udevice *dev)
++{
++	long have_reset;
++
++	have_reset = sbi_probe_extension(SBI_EXT_SRST);
++	if (have_reset)
++		return 0;
++
++	log_warning("SBI has no system reset extension\n");
++	return -ENOENT;
++}
++
++static struct sysreset_ops sbi_sysreset_ops = {
++	.request = sbi_sysreset_request,
++};
++
++U_BOOT_DRIVER(sbi_sysreset) = {
++	.name = "sbi-sysreset",
++	.id = UCLASS_SYSRESET,
++	.ops = &sbi_sysreset_ops,
++	.probe = sbi_sysreset_probe,
++};
+-- 
+2.37.2
+
