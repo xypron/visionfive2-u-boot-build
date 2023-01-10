@@ -5,5 +5,12 @@ set -e
 git am --abort || true
 
 git am ../patch/0001-riscv-Fix-build-against-binutils-2.38.patch
+
+# sbi system reset
 git am ../patch/0001-riscv-add-missing-SBI-extension-definitions.patch
 git am ../patch/0001-sysreset-provide-SBI-based-sysreset-driver.patch
+
+# sbi command
+git am ../patch/0001-cmd-sbi-use-constants-instead-of-numerical-values.patch
+git am ../patch/0001-riscv-function-to-retrieve-SBI-implementation-versio.patch
+git am ../patch/0001-cmd-sbi-show-SBI-implementation-version.patch

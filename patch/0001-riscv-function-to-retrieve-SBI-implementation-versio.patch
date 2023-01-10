@@ -1,0 +1,61 @@
+From afb8e1f06730a35d436c58367f2b15c7dbf90cf1 Mon Sep 17 00:00:00 2001
+From: Heinrich Schuchardt <heinrich.schuchardt@canonical.com>
+Date: Mon, 25 Oct 2021 15:09:34 +0200
+Subject: [PATCH] riscv: function to retrieve SBI implementation version
+
+Provide function sbi_get_impl_version() to retrieve the SBI implementation
+version.
+
+Signed-off-by: Heinrich Schuchardt <heinrich.schuchardt@canonical.com>
+Reviewed-by: Leo Yu-Chi Liang <ycliang@andestech.com>
+Reviewed-by: Rick Chen <rick@andestech.com>
+---
+ arch/riscv/include/asm/sbi.h |  1 +
+ arch/riscv/lib/sbi.c         | 19 +++++++++++++++++++
+ 2 files changed, 20 insertions(+)
+
+diff --git a/arch/riscv/include/asm/sbi.h b/arch/riscv/include/asm/sbi.h
+index 5030892b47..bfcd204953 100644
+--- a/arch/riscv/include/asm/sbi.h
++++ b/arch/riscv/include/asm/sbi.h
+@@ -152,6 +152,7 @@ void sbi_remote_sfence_vma_asid(const unsigned long *hart_mask,
+ void sbi_set_timer(uint64_t stime_value);
+ long sbi_get_spec_version(void);
+ int sbi_get_impl_id(void);
++int sbi_get_impl_version(long *version);
+ int sbi_probe_extension(int ext);
+ void sbi_srst_reset(unsigned long type, unsigned long reason);
+ 
+diff --git a/arch/riscv/lib/sbi.c b/arch/riscv/lib/sbi.c
+index 2b53896b8a..d427d1b29e 100644
+--- a/arch/riscv/lib/sbi.c
++++ b/arch/riscv/lib/sbi.c
+@@ -89,6 +89,25 @@ int sbi_get_impl_id(void)
+ 	return -ENOTSUPP;
+ }
+ 
++/**
++ * sbi_get_impl_version() - get SBI implementation version
++ *
++ * @version:	pointer to receive version
++ * Return:	0 on success, -ENOTSUPP otherwise
++ */
++int sbi_get_impl_version(long *version)
++{
++	struct sbiret ret;
++
++	ret = sbi_ecall(SBI_EXT_BASE, SBI_EXT_BASE_GET_IMP_VERSION,
++			0, 0, 0, 0, 0, 0);
++	if (ret.error)
++		return -ENOTSUPP;
++	if (version)
++		*version = ret.value;
++	return 0;
++}
++
+ /**
+  * sbi_probe_extension() - Check if an SBI extension ID is supported or not.
+  * @extid: The extension ID to be probed.
+-- 
+2.37.2
+

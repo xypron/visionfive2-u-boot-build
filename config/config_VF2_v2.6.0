@@ -4,7 +4,7 @@
 #
 
 #
-# Compiler: riscv64-linux-gnu-gcc (Ubuntu 12.2.0-9ubuntu1) 12.2.0
+# Compiler: gcc (Ubuntu 12.2.0-10ubuntu1) 12.2.0
 #
 CONFIG_CREATE_ARCH_SYMLINK=y
 CONFIG_LINKER_LIST_ALIGN=4
@@ -408,7 +408,7 @@ CONFIG_CMD_CPU=y
 # CONFIG_CMD_PMC is not set
 # CONFIG_CMD_TLV_EEPROM is not set
 # CONFIG_SPL_CMD_TLV_EEPROM is not set
-# CONFIG_CMD_SBI is not set
+CONFIG_CMD_SBI=y
 
 #
 # Boot commands
