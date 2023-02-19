@@ -1,7 +1,7 @@
 # Build U-Boot for StarFive VisionFive 2
 .POSIX:
 
-TAG=VF2_v2.6.0
+TAG=VF2_v2.8.0
 NPROC=${shell nproc}
 
 MK_ARCH="${shell uname -m}"
@@ -14,6 +14,7 @@ undefine MK_ARCH
 
 all:
 	make visionfive2_fw_payload.img
+	u-boot-spl.bin.normal.out
 
 prepare:
 	test -d opensbi || git clone -v \
@@ -22,6 +23,7 @@ prepare:
 	https://github.com/starfive-tech/u-boot.git
 
 u-boot.bin:
+	cd u-boot && git fetch origin
 	cd u-boot && git checkout JH7110_VisionFive2_devel
 	cd u-boot && git reset --hard $(TAG)
 	cd u-boot && ../patch/series
@@ -32,6 +34,9 @@ u-boot.bin:
 	cp u-boot/u-boot.bin .
 
 fw_payload.bin: u-boot.bin
+	cd opensbi && git fetch origin
+	cd opensbi && git checkout JH7110_VisionFive2_devel
+	cd opensbi && git reset --hard $(TAG)
 	cd opensbi && rm -rf build/
 	cd opensbi && make -j $(NPROC) \
 	  PLATFORM=generic \
@@ -44,6 +49,10 @@ visionfive2_fw_payload.img: fw_payload.bin
 	mkimage -f visionfive2-uboot-fit-image.its \
 	  -A riscv -O linux -T flat_dt \
 	  visionfive2_fw_payload.img
+
+u-boot-spl.bin.normal.out: u-boot.bin
+	spl_tool -c -f u-boot/spl/u-boot-spl.bin
+	mv u-boot/spl/u-boot-spl.bin.normal.out .
 
 clean:
 	rm -f visionfive2_fw_payload.img fw_payload.bin u-boot.bin
