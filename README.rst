@@ -28,6 +28,7 @@ Copy the files to the SD-card. In U-Boot execute:
 
 .. code-block:: bash
 
+   sf probe
    load mmc 1:f $kernel_addr_r fw/u-boot-spl.bin.normal.out
    sf update $kernel_addr_r 0 $filesize
    load mmc 1:f $kernel_addr_r fw/visionfive2_fw_payload.img
