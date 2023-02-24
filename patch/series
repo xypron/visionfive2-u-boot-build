@@ -6,6 +6,9 @@ git am --abort || true
 
 git am ../patch/0001-riscv-Fix-build-against-binutils-2.38.patch
 
+# fix device-tree
+git am ../patch/0001-dts-correct-memory-node-for-VisionFive-2.patch
+
 # sbi system reset
 git am ../patch/0001-riscv-add-missing-SBI-extension-definitions.patch
 git am ../patch/0001-sysreset-provide-SBI-based-sysreset-driver.patch

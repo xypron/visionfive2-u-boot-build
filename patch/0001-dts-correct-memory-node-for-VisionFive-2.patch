@@ -1,0 +1,42 @@
+From 8b2392fe42e0a6e968504ae11be4f99155e263b9 Mon Sep 17 00:00:00 2001
+From: Heinrich Schuchardt <heinrich.schuchardt@canonical.com>
+Date: Fri, 24 Feb 2023 16:02:54 +0100
+Subject: [PATCH 1/1] dts: correct memory node for VisionFive 2
+
+The node address must match the address in the reg property.
+
+Signed-off-by: Heinrich Schuchardt <heinrich.schuchardt@canonical.com>
+---
+ arch/riscv/dts/starfive_visionfive2-u-boot.dtsi | 2 +-
+ arch/riscv/dts/starfive_visionfive2.dts         | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/arch/riscv/dts/starfive_visionfive2-u-boot.dtsi b/arch/riscv/dts/starfive_visionfive2-u-boot.dtsi
+index 7fd1281eb5..08dd841453 100644
+--- a/arch/riscv/dts/starfive_visionfive2-u-boot.dtsi
++++ b/arch/riscv/dts/starfive_visionfive2-u-boot.dtsi
+@@ -20,7 +20,7 @@
+ 		u-boot,spl-payload-offset = <0x100000>; /* loader2 @1044KB */
+ 	};
+ 
+-	memory@80000000 {
++	memory@40000000 {
+ 		u-boot,dm-spl;
+ 		device_type = "memory";
+ 		reg = <0x0 0x40000000 0x1 0x0>;
+diff --git a/arch/riscv/dts/starfive_visionfive2.dts b/arch/riscv/dts/starfive_visionfive2.dts
+index 4dcfa1bacb..e7d2bf8a31 100644
+--- a/arch/riscv/dts/starfive_visionfive2.dts
++++ b/arch/riscv/dts/starfive_visionfive2.dts
+@@ -29,7 +29,7 @@
+ 	};
+ 
+ 
+-	memory@80000000 {
++	memory@40000000 {
+ 		device_type = "memory";
+ 		reg = <0x0 0x40000000 0x1 0x0>;
+ 	};
+-- 
+2.38.1
+
