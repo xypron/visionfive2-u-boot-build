@@ -1,0 +1,77 @@
+From cfb31e0b9e23809fc3733b733b20b3443e15c704 Mon Sep 17 00:00:00 2001
+From: Heinrich Schuchardt <heinrich.schuchardt@canonical.com>
+Date: Thu, 17 Mar 2022 07:36:15 +0100
+Subject: [PATCH] cmd/sbi: add missing SBI information
+
+Let the sbi command display:
+
+* machine vendor ID
+* machine architecture ID
+* machine implementation ID
+
+With this patch the output for the HiFive Unmatched looks like
+
+    => sbi
+    SBI 0.3
+    OpenSBI 0.9
+    Machine:
+      Vendor ID 489
+      Architecture ID 8000000000000007
+      Implementation ID 20181004
+    Extensions:
+      sbi_set_timer
+      sbi_console_putchar
+      sbi_console_getchar
+      sbi_clear_ipi
+      sbi_send_ipi
+      sbi_remote_fence_i
+      sbi_remote_sfence_vma
+      sbi_remote_sfence_vma_asid
+      sbi_shutdown
+      SBI Base Functionality
+      Timer Extension
+      IPI Extension
+      RFENCE Extension
+      Hart State Management Extension
+      System Reset Extension
+
+Signed-off-by: Heinrich Schuchardt <heinrich.schuchardt@canonical.com>
+Reviewed-by: Sean Anderson <seanga2@gmail.com>
+---
+ cmd/riscv/sbi.c | 13 ++++++++++++-
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/cmd/riscv/sbi.c b/cmd/riscv/sbi.c
+index 8349123925..8fc8ab0ac5 100644
+--- a/cmd/riscv/sbi.c
++++ b/cmd/riscv/sbi.c
+@@ -52,6 +52,7 @@ static int do_sbi(struct cmd_tbl *cmdtp, int flag, int argc,
+ {
+ 	int i, impl_id;
+ 	long ret;
++	long mvendorid, marchid, mimpid;
+ 
+ 	ret = sbi_get_spec_version();
+ 	if (ret >= 0)
+@@ -77,7 +78,17 @@ static int do_sbi(struct cmd_tbl *cmdtp, int flag, int argc,
+ 		if (i == ARRAY_SIZE(implementations))
+ 			printf("Unknown implementation ID %ld", ret);
+ 	}
+-	printf("\nExtensions:\n");
++	printf("\nMachine:\n");
++	ret = sbi_get_mvendorid(&mvendorid);
++	if (!ret)
++		printf("  Vendor ID %lx\n", mvendorid);
++	ret = sbi_get_marchid(&marchid);
++	if (!ret)
++		printf("  Architecture ID %lx\n", marchid);
++	ret = sbi_get_mimpid(&mimpid);
++	if (!ret)
++		printf("  Implementation ID %lx\n", mimpid);
++	printf("Extensions:\n");
+ 	for (i = 0; i < ARRAY_SIZE(extensions); ++i) {
+ 		ret = sbi_probe_extension(extensions[i].id);
+ 		if (ret > 0)
+-- 
+2.38.1
+

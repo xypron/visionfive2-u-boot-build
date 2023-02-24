@@ -16,8 +16,3 @@ git am ../patch/0001-riscv-function-to-retrieve-SBI-implementation-versio.patch
 git am ../patch/0001-cmd-sbi-show-SBI-implementation-version.patch
 git am ../patch/0001-riscv-provide-missing-base-extension-functions.patch
 git am ../patch/0001-cmd-sbi-add-missing-SBI-information.patch
-git am ../patch/0001-efi_loader-expose-the-device-tree-file-name.patch
-
-git am ../patch/0001-disk-accessors-for-conditional-partition-fields.patch
-git am ../patch/0001-kconfig-new-macro-OPT_ENABLED.patch
-git am ../patch/0001-spl-allow-loading-via-partition-type-GUID.patch
