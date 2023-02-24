@@ -52,6 +52,19 @@ The SD-card must be GPT partitioned.
 * copy u-boot-spl.bin.normal.out to a partition with partion type GUID
   2E54B353-1271-4842-806F-E436D6AF6985
 
+Debug UART
+----------
+
+Early printing can be enabled with:
+
+.. code-block::
+
+    CONFIG_DEBUG_UART=y
+    CONFIG_DEBUG_UART_NS16550=y
+    CONFIG_DEBUG_UART_BASE=0x10000000
+    CONFIG_DEBUG_UART_CLOCK=24000000
+    CONFIG_DEBUG_UART_SHIFT=2
+
 License
 -------
 
