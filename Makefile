@@ -14,15 +14,15 @@ undefine MK_ARCH
 
 all:
 	make visionfive2_fw_payload.img
-	u-boot-spl.bin.normal.out
+	make u-boot-spl.bin.normal.out
 
-prepare:
-	test -d opensbi || git clone -v \
-	https://github.com/starfive-tech/opensbi.git
-	test -d u-boot || git clone -v \
-	https://github.com/starfive-tech/u-boot.git
+opensbi:
+	git clone -v https://github.com/starfive-tech/opensbi.git
 
-u-boot.bin:
+u-boot:
+	git clone -v https://github.com/starfive-tech/u-boot.git
+
+u-boot.bin: u-boot
 	cd u-boot && git fetch origin
 	cd u-boot && git checkout JH7110_VisionFive2_devel
 	cd u-boot && git reset --hard $(TAG)
@@ -33,7 +33,7 @@ u-boot.bin:
 	cd u-boot && make -j $(NPROC)
 	cp u-boot/u-boot.bin .
 
-fw_payload.bin: u-boot.bin
+fw_payload.bin: opensbi u-boot.bin
 	cd opensbi && git fetch origin
 	cd opensbi && git checkout JH7110_VisionFive2_devel
 	cd opensbi && git reset --hard $(TAG)
