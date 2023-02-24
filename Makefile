@@ -16,6 +16,13 @@ all:
 	make visionfive2_fw_payload.img
 	make u-boot-spl.bin.normal.out
 
+tools:
+	git clone -v https://github.com/starfive-tech/Tools tools
+
+spl_tool: tools
+	cd tools/spl_tool && make
+	cp tools/spl_tool/spl_tool .
+
 opensbi:
 	git clone -v https://github.com/starfive-tech/opensbi.git
 
@@ -50,8 +57,8 @@ visionfive2_fw_payload.img: fw_payload.bin
 	  -A riscv -O linux -T flat_dt \
 	  visionfive2_fw_payload.img
 
-u-boot-spl.bin.normal.out: u-boot.bin
-	spl_tool -c -f u-boot/spl/u-boot-spl.bin
+u-boot-spl.bin.normal.out: spl_tool u-boot.bin
+	./spl_tool -c -f u-boot/spl/u-boot-spl.bin
 	mv u-boot/spl/u-boot-spl.bin.normal.out .
 
 clean:
